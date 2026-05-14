@@ -2,6 +2,8 @@
 
 A local-first teleprompter for writing, importing, rehearsing, and recording scripts.
 
+![Open Teleprompter](./open-teleprompter-hero.png)
+
 ## Features
 
 - Script editor with autosave in the browser
