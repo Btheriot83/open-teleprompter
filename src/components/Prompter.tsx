@@ -25,6 +25,12 @@ export default function Prompter({ script, settings, onSettings, onExit }: Props
   const lastTickRef = useRef<number>(0);
   const fixedScrollTopRef = useRef<number>(0);
   const timedStartedAtRef = useRef<number>(0);
+  // Track speed in a ref so the voice useEffect can read the live value
+  // inside its assist tick without listing `settings.speed` in its deps —
+  // otherwise every speed-slider drag (or ↑/↓ keypress, which the keyboard
+  // remote maps to speed) tore down the mic stream + recognition and
+  // restarted the 3-second arming countdown from zero.
+  const voiceSpeedRef = useRef<number>(0);
   const [playing, setPlaying] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [timedElapsedSec, setTimedElapsedSec] = useState(0);
@@ -110,6 +116,8 @@ export default function Prompter({ script, settings, onSettings, onExit }: Props
   const [voiceTrace, setVoiceTrace] = useState('');
   const [voiceCountdown, setVoiceCountdown] = useState<number | null>(null);
   const [voiceCursor, setVoiceCursor] = useState(0);
+  // Keep the speed ref synced — see the comment on voiceSpeedRef above.
+  useEffect(() => { voiceSpeedRef.current = settings.speed; }, [settings.speed]);
   useEffect(() => {
     if (!playing || settings.mode !== 'voice') return;
     const SR =
@@ -161,7 +169,7 @@ export default function Prompter({ script, settings, onSettings, onExit }: Props
           assistCursorRef.current = advanceVoiceAssistCursor(
             assistCursorRef.current,
             dt,
-            settings.speed,
+            voiceSpeedRef.current,
             tokens.length
           );
           cursorRef.current = Math.max(cursorRef.current, Math.floor(assistCursorRef.current));
@@ -388,7 +396,7 @@ export default function Prompter({ script, settings, onSettings, onExit }: Props
       setVoiceTrace('');
       setVoiceCountdown(null);
     };
-  }, [playing, settings.mode, settings.speed, script.text]);
+  }, [playing, settings.mode, script.text]);
 
   // Keyboard remote
   useEffect(() => {
